@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: fda_ndc_directory
+    description: "Raw data landed by dlt from the FDA NDC Directory zip file."
+    tables:
+      - name: bronze_ndc_product_raw
+        description: "Bronze table containing the raw product rows."
+        columns:
+          - name: coreason_id
+            description: "Shift-left UUID generated from PRODUCTID."
+          - name: source_file
+            description: "The name of the source text file."
+          - name: ingestion_ts
+            description: "The timestamp of when the row was ingested."
+          - name: content_hash
+            description: "MD5 hash of the row content."
+          - name: raw_data
+            description: "JSONB column containing the raw tab-delimited fields."
+
+      - name: bronze_ndc_package_raw
+        description: "Bronze table containing the raw package rows."
+        columns:
+          - name: coreason_id
+            description: "Shift-left UUID generated from PRODUCTID."
+          - name: source_file
+            description: "The name of the source text file."
+          - name: ingestion_ts
+            description: "The timestamp of when the row was ingested."
+          - name: content_hash
+            description: "MD5 hash of the row content."
+          - name: raw_data
+            description: "JSONB column containing the raw tab-delimited fields."
