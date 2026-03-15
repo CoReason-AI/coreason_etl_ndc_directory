@@ -8,6 +8,7 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_etl_ndc_directory
 
+import contextlib
 import os
 import tempfile
 import uuid
@@ -83,6 +84,11 @@ def stream_and_process_fda_zip(url: str, target_filename: str, id_column: str) -
 
     finally:
         # Ensure cross-platform cleanup
+        with contextlib.suppress(Exception):  # pragma: no cover
+            tmp_zip.close()
+        with contextlib.suppress(Exception):  # pragma: no cover
+            tmp_extract.close()
+
         if os.path.exists(tmp_zip.name):
             os.unlink(tmp_zip.name)
         if os.path.exists(tmp_extract.name):
