@@ -27,3 +27,22 @@ models:
         description: "e.g., 'ORAL', 'INTRAVENOUS'"
       - name: marketing_start_date
         description: "Parsed to ISO 8601 (YYYYMMDD -> Date)"
+
+  - name: silver_ndc_package
+    description: "Silver table for FDA NDC Package Data."
+    columns:
+      - name: coreason_id
+        description: "Primary Key (Pre-computed in Python)"
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Foreign Key to Silver.NDC_Product"
+        tests:
+          - not_null
+      - name: ndc_package_code
+        description: "FDA 10-digit package code"
+        tests:
+          - not_null
+      - name: package_description
+        description: "e.g., '100 TABLET in 1 BOTTLE'"
