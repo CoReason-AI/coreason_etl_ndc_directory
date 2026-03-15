@@ -32,6 +32,30 @@ def test_dbt_project_configuration_exists() -> None:
     assert "models" in config
 
 
+def test_dbt_silver_models_configured() -> None:
+    """
+    Test that the silver_ndc_product model is present and configured.
+    """
+    model_file = DBT_PROJECT_DIR / "models" / "silver" / "silver_ndc_product.sql"
+    assert model_file.exists(), "silver_ndc_product.sql not found."
+
+    schema_file = DBT_PROJECT_DIR / "models" / "silver" / "schema.yml"
+    assert schema_file.exists(), "Silver schema.yml not found."
+
+    with open(schema_file) as f:
+        schema_config = yaml.safe_load(f)
+
+    assert "models" in schema_config
+    models = schema_config["models"]
+
+    product_model = next((m for m in models if m["name"] == "silver_ndc_product"), None)
+    assert product_model is not None, "silver_ndc_product model not configured in schema.yml."
+
+    column_names = [c["name"] for c in product_model.get("columns", [])]
+    assert "coreason_id" in column_names
+    assert "product_id" in column_names
+
+
 def test_dbt_sources_configured() -> None:
     """
     Test that the sources.yml file is present and properly configures the Bronze tables.
