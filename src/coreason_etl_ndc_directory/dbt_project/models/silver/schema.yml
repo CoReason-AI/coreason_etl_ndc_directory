@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: silver_ndc_product
+    description: "Silver table for FDA NDC Product Data."
+    columns:
+      - name: coreason_id
+        description: "Primary Key (Pre-computed in Python)"
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: "Source ID (e.g., 12345-678_01)"
+        tests:
+          - not_null
+      - name: product_ndc
+        description: "Base 10-digit product code"
+      - name: proprietary_name
+        description: "Trade name"
+      - name: non_proprietary_name
+        description: "Generic name / Active Ingredient"
+      - name: labeler_name
+        description: "Manufacturer/Distributor"
+      - name: dosage_form
+        description: "e.g., 'TABLET', 'INJECTION'"
+      - name: route
+        description: "e.g., 'ORAL', 'INTRAVENOUS'"
+      - name: marketing_start_date
+        description: "Parsed to ISO 8601 (YYYYMMDD -> Date)"
