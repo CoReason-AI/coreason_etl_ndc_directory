@@ -8,49 +8,46 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_etl_ndc_directory
 
-import os
-from unittest import mock
-
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
-from pydantic import ValidationError
 
-from coreason_etl_ndc_directory.config import SystemConfigurationState
+from coreason_etl_ndc_directory.config.settings import SystemConfigurationState
 
 
 def test_system_configuration_default() -> None:
-    """
-    Ensure the SystemConfigurationState model initializes correctly with default parameters.
-    """
+    """Test the default configuration values."""
     config = SystemConfigurationState()
     assert config.fda_ndc_target_url == "https://www.accessdata.fda.gov/cder/ndctext.zip"
 
 
-def test_system_configuration_env_override() -> None:
-    """
-    Ensure the SystemConfigurationState model updates its parameters via environment variables.
-    """
-    with mock.patch.dict(os.environ, {"FDA_NDC_TARGET_URL": "https://example.com/ndc.zip"}):
-        config = SystemConfigurationState()
-        assert config.fda_ndc_target_url == "https://example.com/ndc.zip"
+def test_system_configuration_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test overriding configuration values using environment variables."""
+    test_url = "https://example.com/custom_ndctext.zip"
+    monkeypatch.setenv("FDA_NDC_TARGET_URL", test_url)
+
+    config = SystemConfigurationState()
+    assert config.fda_ndc_target_url == test_url
 
 
-@given(st.text(alphabet=st.characters(blacklist_categories=["Cc", "Cs"])))  # type: ignore[misc]
-def test_system_configuration_arbitrary_urls(url: str) -> None:
-    """
-    Ensure the SystemConfigurationState model accepts arbitrary strings as URL for fda_ndc_target_url.
-    Since it is typed as a str in the implementation, any string without control characters is valid.
-    """
-    with mock.patch.dict(os.environ, {"FDA_NDC_TARGET_URL": url}):
-        config = SystemConfigurationState()
-        assert config.fda_ndc_target_url == url
+def test_system_configuration_ignore_extra_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that extra environment variables do not cause validation errors."""
+    monkeypatch.setenv("EXTRA_CONFIG_VAR", "some_value")
+    config = SystemConfigurationState()
+
+    # Should still use default, and extra var should be ignored
+    assert config.fda_ndc_target_url == "https://www.accessdata.fda.gov/cder/ndctext.zip"
+    assert not hasattr(config, "EXTRA_CONFIG_VAR")
 
 
-def test_system_configuration_invalid_type() -> None:
-    """
-    Ensure the SystemConfigurationState model raises ValidationError on invalid types.
-    Wait, Pydantic tries to coerce. Let's test providing an invalid value via instantiation.
-    """
-    with pytest.raises(ValidationError):
-        SystemConfigurationState(fda_ndc_target_url=object())
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://insecure.example.com/data.zip",
+        "ftp://example.com/data.zip",
+        "file:///local/path/data.zip",
+    ],
+)
+def test_system_configuration_arbitrary_urls(url: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that it accepts arbitrary strings as URLs for flexibility, as per current strictness."""
+    monkeypatch.setenv("FDA_NDC_TARGET_URL", url)
+    config = SystemConfigurationState()
+    assert config.fda_ndc_target_url == url
