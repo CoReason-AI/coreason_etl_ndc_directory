@@ -32,6 +32,31 @@ def test_dbt_project_configuration_exists() -> None:
     assert "models" in config
 
 
+def test_dbt_gold_models_configured() -> None:
+    """
+    Test that the gold models are present and configured.
+    """
+    model_file = DBT_PROJECT_DIR / "models" / "gold" / "gold_ndc_billing_crosswalk.sql"
+    assert model_file.exists(), "gold_ndc_billing_crosswalk.sql not found."
+
+    schema_file = DBT_PROJECT_DIR / "models" / "gold" / "schema.yml"
+    assert schema_file.exists(), "Gold schema.yml not found."
+
+    with open(schema_file) as f:
+        schema_config = yaml.safe_load(f)
+
+    assert "models" in schema_config
+    models = schema_config["models"]
+
+    crosswalk_model = next((m for m in models if m["name"] == "gold_ndc_billing_crosswalk"), None)
+    assert crosswalk_model is not None, "gold_ndc_billing_crosswalk model not configured in schema.yml."
+
+    column_names = [c["name"] for c in crosswalk_model.get("columns", [])]
+    assert "package_coreason_id" in column_names
+    assert "product_coreason_id" in column_names
+    assert "ndc_11_digit" in column_names
+
+
 def test_dbt_silver_models_configured() -> None:
     """
     Test that the silver_ndc_product and silver_ndc_package models are present and configured.
