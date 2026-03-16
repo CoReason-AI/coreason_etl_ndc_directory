@@ -22,7 +22,7 @@ sources:
         description: "Bronze table containing the raw package rows."
         columns:
           - name: coreason_id
-            description: "Shift-left UUID generated from PRODUCTID."
+            description: "Shift-left UUID generated from NDCPACKAGECODE."
           - name: source_file
             description: "The name of the source text file."
           - name: ingestion_ts

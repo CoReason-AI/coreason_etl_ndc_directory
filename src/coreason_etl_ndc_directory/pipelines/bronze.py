@@ -82,6 +82,6 @@ def fda_ndc_source() -> Any:
         primary_key="coreason_id",
     )
     def bronze_ndc_package_raw() -> Iterator[list[dict[str, Any]]]:
-        yield from fda_ndc_resource_generator(url, "package.txt", "PRODUCTID", ingestion_ts)
+        yield from fda_ndc_resource_generator(url, "package.txt", "NDCPACKAGECODE", ingestion_ts)
 
     return [bronze_ndc_product_raw, bronze_ndc_package_raw]

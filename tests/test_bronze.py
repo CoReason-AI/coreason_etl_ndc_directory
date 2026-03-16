@@ -59,11 +59,18 @@ def test_transform_to_bronze_schema() -> None:
 def _mock_stream_and_process_fda_zip(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock the Polars generator."""
 
-    def generator_factory(*_args: Any, **_kwargs: Any) -> Iterator[list[dict[str, Any]]]:
-        yield [
-            {"coreason_id": "uuid-1", "PRODUCTID": "123", "NAME": "Drug A"},
-            {"coreason_id": "uuid-2", "PRODUCTID": "456", "NAME": "Drug B"},
-        ]
+    def generator_factory(*args: Any, **_kwargs: Any) -> Iterator[list[dict[str, Any]]]:
+        # args[1] is target_filename
+        if args[1] == "package.txt":
+            yield [
+                {"coreason_id": "uuid-p1", "NDCPACKAGECODE": "PKG-1"},
+                {"coreason_id": "uuid-p2", "NDCPACKAGECODE": "PKG-2"},
+            ]
+        else:
+            yield [
+                {"coreason_id": "uuid-1", "PRODUCTID": "123", "NAME": "Drug A"},
+                {"coreason_id": "uuid-2", "PRODUCTID": "456", "NAME": "Drug B"},
+            ]
 
     monkeypatch.setattr(
         "coreason_etl_ndc_directory.pipelines.bronze.stream_and_process_fda_zip",
