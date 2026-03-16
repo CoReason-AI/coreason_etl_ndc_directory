@@ -2,6 +2,13 @@
 
 with source as (
     select * from {{ source('fda_ndc_directory', 'bronze_ndc_product_raw') }}
+),
+
+deduplicated as (
+    select
+        *,
+        row_number() over (partition by coreason_id order by ingestion_ts desc) as rn
+    from source
 )
 
 select
@@ -18,4 +25,5 @@ select
             to_date(trim(raw_data->>'STARTMARKETINGDATE'), 'YYYYMMDD')
         else null
     end as marketing_start_date
-from source
+from deduplicated
+where rn = 1
