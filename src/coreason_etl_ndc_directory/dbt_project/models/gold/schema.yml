@@ -30,3 +30,19 @@ models:
         description: "Parsed to ISO 8601 (YYYYMMDD -> Date)"
       - name: ndc_11_digit
         description: "Unhyphenated 11-digit billing format (5-4-2)"
+
+  - name: gold_ndc_active_ingredients
+    description: "An unnested view utilizing PostgreSQL array functions to split the SUBSTANCENAME and ACTIVE_NUMERATOR_STRENGTH columns."
+    columns:
+      - name: product_coreason_id
+        description: "Shift-left UUID for the product."
+        tests:
+          - not_null
+      - name: product_id
+        description: "Source ID (e.g., 12345-678_01)"
+        tests:
+          - not_null
+      - name: substance_name
+        description: "The active ingredient/substance name."
+      - name: active_numerator_strength
+        description: "The strength of the active ingredient."
