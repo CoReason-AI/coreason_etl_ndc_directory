@@ -100,7 +100,7 @@ def test_fda_ndc_resource_generator() -> None:
 
 
 def test_fda_ndc_source() -> None:
-    """Test the source initialization."""
+    """Test the source initialization and explicit JSONB typing."""
     source_resources = fda_ndc_source()
 
     # In dlt, source_resources has resources property holding its configured resources
@@ -114,6 +114,17 @@ def test_fda_ndc_source() -> None:
 
     assert product_resource.name == "bronze_ndc_product_raw"
     assert package_resource.name == "bronze_ndc_package_raw"
+
+    # Test explicit JSON schema typing for raw_data
+    # Access the partial table schema columns of the resource
+    product_columns = product_resource.compute_table_schema()["columns"]
+    package_columns = package_resource.compute_table_schema()["columns"]
+
+    assert "raw_data" in product_columns
+    assert product_columns["raw_data"]["data_type"] == "json"
+
+    assert "raw_data" in package_columns
+    assert package_columns["raw_data"]["data_type"] == "json"
 
 
 @pytest.mark.usefixtures("_mock_stream_and_process_fda_zip")
