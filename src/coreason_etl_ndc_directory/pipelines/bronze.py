@@ -72,6 +72,7 @@ def fda_ndc_source() -> Any:
         name="bronze_ndc_product_raw",
         write_disposition="replace",
         primary_key="coreason_id",
+        columns={"raw_data": {"data_type": "json"}},
     )
     def bronze_ndc_product_raw() -> Iterator[list[dict[str, Any]]]:
         yield from fda_ndc_resource_generator(url, "product.txt", "PRODUCTID", ingestion_ts)
@@ -80,6 +81,7 @@ def fda_ndc_source() -> Any:
         name="bronze_ndc_package_raw",
         write_disposition="replace",
         primary_key="coreason_id",
+        columns={"raw_data": {"data_type": "json"}},
     )
     def bronze_ndc_package_raw() -> Iterator[list[dict[str, Any]]]:
         yield from fda_ndc_resource_generator(url, "package.txt", "NDCPACKAGECODE", ingestion_ts)
