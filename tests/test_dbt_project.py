@@ -36,8 +36,8 @@ def test_dbt_gold_models_configured() -> None:
     """
     Test that the gold models are present and configured.
     """
-    model_file = DBT_PROJECT_DIR / "models" / "gold" / "gold_ndc_billing_crosswalk.sql"
-    assert model_file.exists(), "gold_ndc_billing_crosswalk.sql not found."
+    model_file = DBT_PROJECT_DIR / "models" / "gold" / "coreason_etl_ndc_directory_gold_ndc_billing_crosswalk.sql"
+    assert model_file.exists(), "coreason_etl_ndc_directory_gold_ndc_billing_crosswalk.sql not found."
 
     schema_file = DBT_PROJECT_DIR / "models" / "gold" / "schema.yml"
     assert schema_file.exists(), "Gold schema.yml not found."
@@ -48,8 +48,12 @@ def test_dbt_gold_models_configured() -> None:
     assert "models" in schema_config
     models = schema_config["models"]
 
-    crosswalk_model = next((m for m in models if m["name"] == "gold_ndc_billing_crosswalk"), None)
-    assert crosswalk_model is not None, "gold_ndc_billing_crosswalk model not configured in schema.yml."
+    crosswalk_model = next(
+        (m for m in models if m["name"] == "coreason_etl_ndc_directory_gold_ndc_billing_crosswalk"), None
+    )
+    assert crosswalk_model is not None, (
+        "coreason_etl_ndc_directory_gold_ndc_billing_crosswalk model not configured in schema.yml."
+    )
 
     column_names = [c["name"] for c in crosswalk_model.get("columns", [])]
     assert "package_coreason_id" in column_names
@@ -59,10 +63,10 @@ def test_dbt_gold_models_configured() -> None:
 
 def test_dbt_gold_active_ingredients_model_configured() -> None:
     """
-    Test that the gold_ndc_active_ingredients model is present and configured.
+    Test that the coreason_etl_ndc_directory_gold_ndc_active_ingredients model is present and configured.
     """
-    model_file = DBT_PROJECT_DIR / "models" / "gold" / "gold_ndc_active_ingredients.sql"
-    assert model_file.exists(), "gold_ndc_active_ingredients.sql not found."
+    model_file = DBT_PROJECT_DIR / "models" / "gold" / "coreason_etl_ndc_directory_gold_ndc_active_ingredients.sql"
+    assert model_file.exists(), "coreason_etl_ndc_directory_gold_ndc_active_ingredients.sql not found."
 
     schema_file = DBT_PROJECT_DIR / "models" / "gold" / "schema.yml"
     assert schema_file.exists(), "Gold schema.yml not found."
@@ -73,8 +77,12 @@ def test_dbt_gold_active_ingredients_model_configured() -> None:
     assert "models" in schema_config
     models = schema_config["models"]
 
-    ingredients_model = next((m for m in models if m["name"] == "gold_ndc_active_ingredients"), None)
-    assert ingredients_model is not None, "gold_ndc_active_ingredients model not configured in schema.yml."
+    ingredients_model = next(
+        (m for m in models if m["name"] == "coreason_etl_ndc_directory_gold_ndc_active_ingredients"), None
+    )
+    assert ingredients_model is not None, (
+        "coreason_etl_ndc_directory_gold_ndc_active_ingredients model not configured in schema.yml."
+    )
 
     column_names = [c["name"] for c in ingredients_model.get("columns", [])]
     assert "product_coreason_id" in column_names
@@ -85,13 +93,13 @@ def test_dbt_gold_active_ingredients_model_configured() -> None:
 
 def test_dbt_silver_models_configured() -> None:
     """
-    Test that the silver_ndc_product and silver_ndc_package models are present and configured.
+    Test that the silver models are present and configured.
     """
-    model_file = DBT_PROJECT_DIR / "models" / "silver" / "silver_ndc_product.sql"
-    assert model_file.exists(), "silver_ndc_product.sql not found."
+    model_file = DBT_PROJECT_DIR / "models" / "silver" / "coreason_etl_ndc_directory_silver_ndc_product.sql"
+    assert model_file.exists(), "coreason_etl_ndc_directory_silver_ndc_product.sql not found."
 
-    package_model_file = DBT_PROJECT_DIR / "models" / "silver" / "silver_ndc_package.sql"
-    assert package_model_file.exists(), "silver_ndc_package.sql not found."
+    package_model_file = DBT_PROJECT_DIR / "models" / "silver" / "coreason_etl_ndc_directory_silver_ndc_package.sql"
+    assert package_model_file.exists(), "coreason_etl_ndc_directory_silver_ndc_package.sql not found."
 
     schema_file = DBT_PROJECT_DIR / "models" / "silver" / "schema.yml"
     assert schema_file.exists(), "Silver schema.yml not found."
@@ -102,15 +110,19 @@ def test_dbt_silver_models_configured() -> None:
     assert "models" in schema_config
     models = schema_config["models"]
 
-    product_model = next((m for m in models if m["name"] == "silver_ndc_product"), None)
-    assert product_model is not None, "silver_ndc_product model not configured in schema.yml."
+    product_model = next((m for m in models if m["name"] == "coreason_etl_ndc_directory_silver_ndc_product"), None)
+    assert product_model is not None, (
+        "coreason_etl_ndc_directory_silver_ndc_product model not configured in schema.yml."
+    )
 
     column_names = [c["name"] for c in product_model.get("columns", [])]
     assert "coreason_id" in column_names
     assert "product_id" in column_names
 
-    package_model = next((m for m in models if m["name"] == "silver_ndc_package"), None)
-    assert package_model is not None, "silver_ndc_package model not configured in schema.yml."
+    package_model = next((m for m in models if m["name"] == "coreason_etl_ndc_directory_silver_ndc_package"), None)
+    assert package_model is not None, (
+        "coreason_etl_ndc_directory_silver_ndc_package model not configured in schema.yml."
+    )
 
     package_column_names = [c["name"] for c in package_model.get("columns", [])]
     assert "coreason_id" in package_column_names
@@ -136,8 +148,8 @@ def test_dbt_sources_configured() -> None:
     assert fda_source is not None, "fda_ndc_directory source not configured."
 
     table_names = [t["name"] for t in fda_source.get("tables", [])]
-    assert "bronze_ndc_product_raw" in table_names
-    assert "bronze_ndc_package_raw" in table_names
+    assert "coreason_etl_ndc_directory_bronze_ndc_product_raw" in table_names
+    assert "coreason_etl_ndc_directory_bronze_ndc_package_raw" in table_names
 
 
 @pytest.mark.skipif(not DBT_PROJECT_DIR.exists(), reason="DBT project not scaffolded yet")

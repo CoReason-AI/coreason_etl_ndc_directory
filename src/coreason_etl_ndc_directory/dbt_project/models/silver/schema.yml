@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: silver_ndc_product
+  - name: coreason_etl_ndc_directory_silver_ndc_product
     description: "Silver table for FDA NDC Product Data."
     columns:
       - name: coreason_id
@@ -28,7 +28,7 @@ models:
       - name: marketing_start_date
         description: "Parsed to ISO 8601 (YYYYMMDD -> Date)"
 
-  - name: silver_ndc_package
+  - name: coreason_etl_ndc_directory_silver_ndc_package
     description: "Silver table for FDA NDC Package Data."
     columns:
       - name: coreason_id
