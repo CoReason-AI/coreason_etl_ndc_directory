@@ -39,6 +39,34 @@ def mock_fda_zip_content() -> bytes:
     return zip_buffer.getvalue()
 
 
+@pytest.fixture
+def mock_fda_zip_complex_content() -> bytes:
+    """Creates an in-memory zip file with complex unescaped quotes and multiple rows."""
+    import io
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        # A complex scenario:
+        # - Row 1: Unescaped quote inside a field.
+        # - Row 2: Standard row.
+        # - Row 3: A field with a quote at the very beginning but no closing quote (a common FDA issue).
+        content = (
+            "PRODUCTID\tPROPRIETARYNAME\tINGREDIENTS\n"
+            '111-11\tTEST "DRUG"\tA; B; C\n'
+            "222-22\tNORMAL DRUG\tX; Y; Z\n"
+            '333-33\t"UNCLOSED QUOTE DRUG\tM; N; O\n'
+        )
+        zf.writestr("product.txt", content)
+
+    return zip_buffer.getvalue()
+
+
+@pytest.fixture
+def mock_invalid_zip_content() -> bytes:
+    """Creates a corrupted/invalid zip file payload."""
+    return b"This is just some random bytes, not a zip file."
+
+
 @responses.activate  # type: ignore[misc]
 def test_stream_and_process_fda_zip_success(mock_fda_zip_content: bytes) -> None:
     """Test successful downloading, extraction, and shift-left ID generation."""
@@ -60,6 +88,68 @@ def test_stream_and_process_fda_zip_success(mock_fda_zip_content: bytes) -> None
     # Verify deterministic UUID5 generation
     expected_uuid = str(uuid.uuid5(NAMESPACE_NDC, "12345-678_01"))
     assert row["coreason_id"] == expected_uuid
+
+
+@responses.activate  # type: ignore[misc]
+def test_stream_and_process_fda_zip_complex_quotes(mock_fda_zip_complex_content: bytes) -> None:
+    """Test successful extraction when data contains complex unescaped and unclosed quotes."""
+    url = "https://example.com/ndctext.zip"
+    responses.add(responses.GET, url, body=mock_fda_zip_complex_content, status=200)
+
+    # Call the generator
+    gen = stream_and_process_fda_zip(url, "product.txt", "PRODUCTID")
+    result = list(gen)
+
+    assert len(result) == 1
+    rows = result[0]
+    assert len(rows) == 3
+
+    # Row 1 (Unescaped quote inside field)
+    assert rows[0]["PRODUCTID"] == "111-11"
+    assert rows[0]["PROPRIETARYNAME"] == 'TEST "DRUG"'
+    assert rows[0]["INGREDIENTS"] == "A; B; C"
+
+    # Row 2 (Normal)
+    assert rows[1]["PRODUCTID"] == "222-22"
+    assert rows[1]["PROPRIETARYNAME"] == "NORMAL DRUG"
+    assert rows[1]["INGREDIENTS"] == "X; Y; Z"
+
+    # Row 3 (Unclosed quote at start of field)
+    assert rows[2]["PRODUCTID"] == "333-33"
+    assert rows[2]["PROPRIETARYNAME"] == '"UNCLOSED QUOTE DRUG'
+    assert rows[2]["INGREDIENTS"] == "M; N; O"
+
+    # Verify that UUID5 generation worked for all of them
+    assert rows[0]["coreason_id"] == str(uuid.uuid5(NAMESPACE_NDC, "111-11"))
+    assert rows[1]["coreason_id"] == str(uuid.uuid5(NAMESPACE_NDC, "222-22"))
+    assert rows[2]["coreason_id"] == str(uuid.uuid5(NAMESPACE_NDC, "333-33"))
+
+
+@responses.activate  # type: ignore[misc]
+def test_stream_and_process_fda_zip_invalid_zip(mock_invalid_zip_content: bytes) -> None:
+    """Test behavior when the downloaded file is not a valid zip archive."""
+    url = "https://example.com/ndctext.zip"
+    responses.add(responses.GET, url, body=mock_invalid_zip_content, status=200)
+
+    gen = stream_and_process_fda_zip(url, "product.txt", "PRODUCTID")
+
+    with pytest.raises(zipfile.BadZipFile):
+        list(gen)
+
+
+@responses.activate  # type: ignore[misc]
+def test_stream_and_process_fda_zip_missing_id_column(mock_fda_zip_content: bytes) -> None:
+    """Test behavior when the target id_column does not exist in the extracted file."""
+    url = "https://example.com/ndctext.zip"
+    responses.add(responses.GET, url, body=mock_fda_zip_content, status=200)
+
+    # Call generator with an ID column that doesn't exist
+    gen = stream_and_process_fda_zip(url, "product.txt", "NON_EXISTENT_ID")
+
+    import polars as pl
+
+    with pytest.raises(pl.exceptions.ColumnNotFoundError):
+        list(gen)
 
 
 @responses.activate  # type: ignore[misc]
