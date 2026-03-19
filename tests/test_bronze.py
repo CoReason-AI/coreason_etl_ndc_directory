@@ -105,15 +105,15 @@ def test_fda_ndc_source() -> None:
 
     # In dlt, source_resources has resources property holding its configured resources
     resources = source_resources.resources
-    assert "bronze_ndc_product_raw" in resources
-    assert "bronze_ndc_package_raw" in resources
+    assert "coreason_etl_ndc_directory_bronze_ndc_product_raw" in resources
+    assert "coreason_etl_ndc_directory_bronze_ndc_package_raw" in resources
 
     # To test execution, we extract items from the resource
-    product_resource = resources["bronze_ndc_product_raw"]
-    package_resource = resources["bronze_ndc_package_raw"]
+    product_resource = resources["coreason_etl_ndc_directory_bronze_ndc_product_raw"]
+    package_resource = resources["coreason_etl_ndc_directory_bronze_ndc_package_raw"]
 
-    assert product_resource.name == "bronze_ndc_product_raw"
-    assert package_resource.name == "bronze_ndc_package_raw"
+    assert product_resource.name == "coreason_etl_ndc_directory_bronze_ndc_product_raw"
+    assert package_resource.name == "coreason_etl_ndc_directory_bronze_ndc_package_raw"
 
     # Test explicit JSON schema typing for raw_data
     # Access the partial table schema columns of the resource
@@ -132,8 +132,8 @@ def test_fda_ndc_source_generators() -> None:
     """Test the resource generators execution."""
     source_resources = fda_ndc_source()
 
-    product_resource = source_resources.resources["bronze_ndc_product_raw"]
-    package_resource = source_resources.resources["bronze_ndc_package_raw"]
+    product_resource = source_resources.resources["coreason_etl_ndc_directory_bronze_ndc_product_raw"]
+    package_resource = source_resources.resources["coreason_etl_ndc_directory_bronze_ndc_package_raw"]
 
     # Iterate over the resource wrapper, which should flatten the batches
     product_data = list(product_resource)

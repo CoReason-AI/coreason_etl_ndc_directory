@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: gold_ndc_billing_crosswalk
+  - name: coreason_etl_ndc_directory_gold_ndc_billing_crosswalk
     description: "A highly optimized view joining Package -> Product. Exposes ndc_11_digit (unhyphenated) as the primary indexing column to allow seamless joining against pharmacy claims datasets and pricing feeds."
     columns:
       - name: package_coreason_id
@@ -31,7 +31,7 @@ models:
       - name: ndc_11_digit
         description: "Unhyphenated 11-digit billing format (5-4-2)"
 
-  - name: gold_ndc_active_ingredients
+  - name: coreason_etl_ndc_directory_gold_ndc_active_ingredients
     description: "An unnested view utilizing PostgreSQL array functions to split the SUBSTANCENAME and ACTIVE_NUMERATOR_STRENGTH columns."
     columns:
       - name: product_coreason_id
