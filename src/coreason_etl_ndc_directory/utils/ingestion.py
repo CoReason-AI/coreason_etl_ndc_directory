@@ -26,6 +26,22 @@ __all__ = ["NAMESPACE_NDC", "stream_and_process_fda_zip"]
 NAMESPACE_NDC = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 
+@contextlib.contextmanager
+def _managed_temp_file(suffix: str) -> Iterator[str]:
+    """
+    Context manager providing a temporary file path that is guaranteed to be deleted on exit.
+    Using `delete=False` enables closing the file descriptor without deleting the file,
+    preventing PermissionError locks on Windows, while still ensuring cleanup.
+    """
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    os.close(fd)
+    try:
+        yield path
+    finally:
+        with contextlib.suppress(FileNotFoundError, OSError):
+            os.unlink(path)
+
+
 def stream_and_process_fda_zip(url: str, target_filename: str, id_column: str) -> Iterator[list[dict[str, Any]]]:
     """
     Downloads a zip file from the FDA, extracts a target file, and yields parsed
@@ -35,61 +51,44 @@ def stream_and_process_fda_zip(url: str, target_filename: str, id_column: str) -
     prevents silent data loss from unescaped quotes in the FDA text files,
     and uses polars to vectorize UUID generation.
     """
-    # Use delete=False to prevent Windows OS lock bugs
-    tmp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")  # noqa: SIM115
-    tmp_extract = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")  # noqa: SIM115
+    with _managed_temp_file(suffix=".zip") as tmp_zip_path, _managed_temp_file(suffix=".txt") as tmp_extract_path:
+        try:
+            logger.info(f"Downloading ZIP file from {url}")
+            # 1. Stream download to avoid memory exhaustion
+            with requests.get(url, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                with open(tmp_zip_path, "wb") as f_zip:
+                    f_zip.writelines(r.iter_content(chunk_size=8192))
 
-    try:
-        logger.info(f"Downloading ZIP file from {url}")
-        # 1. Stream download to avoid memory exhaustion
-        with requests.get(url, stream=True, timeout=60) as r:
-            r.raise_for_status()
-            for chunk in r.iter_content(chunk_size=8192):
-                tmp_zip.write(chunk)
-        tmp_zip.close()  # Close to release the OS lock
+            logger.info(f"Extracting {target_filename} from {tmp_zip_path}")
+            # 2. Extract the target file
+            with (
+                zipfile.ZipFile(tmp_zip_path, "r") as z,
+                z.open(target_filename) as f_in,
+                open(tmp_extract_path, "wb") as f_out,
+            ):
+                f_out.write(f_in.read())
 
-        logger.info(f"Extracting {target_filename} from {tmp_zip.name}")
-        # 2. Extract the target file
-        with (
-            zipfile.ZipFile(tmp_zip.name, "r") as z,
-            z.open(target_filename) as f_in,
-            open(tmp_extract.name, "wb") as f_out,
-        ):
-            f_out.write(f_in.read())
-        tmp_extract.close()
+            logger.info(f"Processing {target_filename} with polars")
+            # 3. Read with Polars
+            # CRITICAL: FDA text files contain unescaped quotes.
+            # quote_char=None is mandatory to prevent silent data loss and row misalignment.
+            df = pl.read_csv(tmp_extract_path, separator="\t", quote_char=None, encoding="utf8-lossy")
 
-        logger.info(f"Processing {target_filename} with polars")
-        # 3. Read with Polars
-        # CRITICAL: FDA text files contain unescaped quotes.
-        # quote_char=None is mandatory to prevent silent data loss and row misalignment.
-        df = pl.read_csv(tmp_extract.name, separator="\t", quote_char=None, encoding="utf8-lossy")
-
-        logger.info("Applying shift-left UUID generation")
-        # 4. Shift-Left UUID5 Generation
-        df = df.with_columns(
-            pl.col(id_column)
-            .map_batches(
-                lambda s: pl.Series([str(uuid.uuid5(NAMESPACE_NDC, str(x))) for x in s]),
-                return_dtype=pl.String,
+            logger.info("Applying shift-left UUID generation")
+            # 4. Shift-Left UUID5 Generation
+            df = df.with_columns(
+                pl.col(id_column)
+                .map_batches(
+                    lambda s: pl.Series([str(uuid.uuid5(NAMESPACE_NDC, str(x))) for x in s]),
+                    return_dtype=pl.String,
+                )
+                .alias("coreason_id")
             )
-            .alias("coreason_id")
-        )
 
-        # Yield dictionary rows to dlt
-        yield df.to_dicts()
+            # Yield dictionary rows to dlt
+            yield df.to_dicts()
 
-    except Exception:
-        logger.exception(f"Failed to process FDA zip file from {url}")
-        raise
-
-    finally:
-        # Ensure cross-platform cleanup
-        with contextlib.suppress(Exception):  # pragma: no cover
-            tmp_zip.close()
-        with contextlib.suppress(Exception):  # pragma: no cover
-            tmp_extract.close()
-
-        if os.path.exists(tmp_zip.name):
-            os.unlink(tmp_zip.name)
-        if os.path.exists(tmp_extract.name):
-            os.unlink(tmp_extract.name)
+        except Exception:
+            logger.exception(f"Failed to process FDA zip file from {url}")
+            raise

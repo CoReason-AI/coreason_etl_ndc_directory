@@ -23,7 +23,7 @@ from check_lexical_architecture import LexicalArchitectureChecker  # type: ignor
 @pytest.fixture
 def checker() -> Generator[LexicalArchitectureChecker]:
     """Provides a fresh LexicalArchitectureChecker instance."""
-    return LexicalArchitectureChecker("test_file.py")  # type: ignore[return-value]
+    return LexicalArchitectureChecker("test_file.py")  # type: ignore[misc,return-value]
 
 
 def test_valid_class_name(checker: LexicalArchitectureChecker) -> None:

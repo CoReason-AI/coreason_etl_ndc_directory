@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 with source as (
-    select * from {{ source('fda_ndc_directory', 'bronze_ndc_product_raw') }}
+    select * from {{ source('fda_ndc_directory', 'coreason_etl_ndc_directory_bronze_ndc_product_raw') }}
 ),
 
 deduplicated as (

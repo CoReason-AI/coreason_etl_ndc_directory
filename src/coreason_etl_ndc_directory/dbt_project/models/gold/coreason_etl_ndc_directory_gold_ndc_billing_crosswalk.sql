@@ -1,11 +1,11 @@
 {{ config(materialized='view') }}
 
 with package as (
-    select * from {{ ref('silver_ndc_package') }}
+    select * from {{ ref('coreason_etl_ndc_directory_silver_ndc_package') }}
 ),
 
 product as (
-    select * from {{ ref('silver_ndc_product') }}
+    select * from {{ ref('coreason_etl_ndc_directory_silver_ndc_product') }}
 )
 
 select

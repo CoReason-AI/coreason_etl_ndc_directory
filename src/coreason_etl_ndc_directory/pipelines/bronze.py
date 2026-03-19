@@ -69,21 +69,24 @@ def fda_ndc_source() -> Any:
     logger.info("Initializing dlt source for fda_ndc_directory")
 
     @dlt.resource(  # type: ignore[misc]
-        name="bronze_ndc_product_raw",
+        name="coreason_etl_ndc_directory_bronze_ndc_product_raw",
         write_disposition="replace",
         primary_key="coreason_id",
         columns={"raw_data": {"data_type": "json"}},
     )
-    def bronze_ndc_product_raw() -> Iterator[list[dict[str, Any]]]:
+    def coreason_etl_ndc_directory_bronze_ndc_product_raw() -> Iterator[list[dict[str, Any]]]:
         yield from fda_ndc_resource_generator(url, "product.txt", "PRODUCTID", ingestion_ts)
 
     @dlt.resource(  # type: ignore[misc]
-        name="bronze_ndc_package_raw",
+        name="coreason_etl_ndc_directory_bronze_ndc_package_raw",
         write_disposition="replace",
         primary_key="coreason_id",
         columns={"raw_data": {"data_type": "json"}},
     )
-    def bronze_ndc_package_raw() -> Iterator[list[dict[str, Any]]]:
+    def coreason_etl_ndc_directory_bronze_ndc_package_raw() -> Iterator[list[dict[str, Any]]]:
         yield from fda_ndc_resource_generator(url, "package.txt", "NDCPACKAGECODE", ingestion_ts)
 
-    return [bronze_ndc_product_raw, bronze_ndc_package_raw]
+    return [
+        coreason_etl_ndc_directory_bronze_ndc_product_raw,
+        coreason_etl_ndc_directory_bronze_ndc_package_raw,
+    ]
