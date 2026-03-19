@@ -173,19 +173,19 @@ def test_stream_and_process_fda_zip_cleanup_on_error() -> None:
     # The temp files are created *before* the request starts in the function.
     responses.add(responses.GET, url, body=Exception("Connection Failed"))
 
-    # We need to spy on tempfile.NamedTemporaryFile to capture the created filenames
-    # before they are deleted.
-    original_named_temporary_file = tempfile.NamedTemporaryFile
+    # Since we refactored to use mkstemp directly via _managed_temp_file,
+    # we spy on tempfile.mkstemp instead.
+    original_mkstemp = tempfile.mkstemp
 
     created_files = []
 
-    def mock_named_temporary_file(*args: Any, **kwargs: Any) -> Any:
-        f = original_named_temporary_file(*args, **kwargs)
-        created_files.append(f.name)
-        return f
+    def mock_mkstemp(*args: Any, **kwargs: Any) -> Any:
+        fd, path = original_mkstemp(*args, **kwargs)
+        created_files.append(path)
+        return fd, path
 
     # Use monkeypatch pattern to inject our spy
-    tempfile.NamedTemporaryFile = mock_named_temporary_file
+    tempfile.mkstemp = mock_mkstemp  # type: ignore[assignment]
 
     gen = stream_and_process_fda_zip(url, "product.txt", "PRODUCTID")
 
@@ -201,4 +201,4 @@ def test_stream_and_process_fda_zip_cleanup_on_error() -> None:
             assert not os.path.exists(f)
     finally:
         # Restore original
-        tempfile.NamedTemporaryFile = original_named_temporary_file
+        tempfile.mkstemp = original_mkstemp  # type: ignore[assignment]
