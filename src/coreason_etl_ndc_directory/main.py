@@ -58,7 +58,6 @@ def run_pipeline(_intent: PipelineExecutionIntent) -> PipelineExecutionReceipt:
     logger.info(f"Pipeline executed successfully. Load info: {load_info}")
 
     records_loaded = 0
-    # Calculate total records if last trace is available (avoids complex nested dlt job parsing)
     if pipeline.last_trace:
         records_loaded = sum(
             table_metrics.get("row_count", 0)

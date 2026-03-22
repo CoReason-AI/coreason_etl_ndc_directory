@@ -13,6 +13,7 @@ import os
 import tempfile
 import uuid
 import zipfile
+import shutil
 from collections.abc import Iterator
 from typing import Any
 
@@ -50,33 +51,29 @@ def stream_and_process_fda_zip(url: str, target_filename: str, id_column: str) -
     AGENT INSTRUCTION: Uses a tempfile strategy that prevents OS lock bugs,
     prevents silent data loss from unescaped quotes in the FDA text files,
     and uses polars to vectorize UUID generation.
+
+    AGENT INSTRUCTION: quote_char=None is mandatory during polars parsing to prevent silent data loss from unescaped quotes.
     """
     with _managed_temp_file(suffix=".zip") as tmp_zip_path, _managed_temp_file(suffix=".txt") as tmp_extract_path:
         try:
             logger.info(f"Downloading ZIP file from {url}")
-            # 1. Stream download to avoid memory exhaustion
             with requests.get(url, stream=True, timeout=60) as r:
                 r.raise_for_status()
                 with open(tmp_zip_path, "wb") as f_zip:
                     f_zip.writelines(r.iter_content(chunk_size=8192))
 
             logger.info(f"Extracting {target_filename} from {tmp_zip_path}")
-            # 2. Extract the target file
             with (
                 zipfile.ZipFile(tmp_zip_path, "r") as z,
                 z.open(target_filename) as f_in,
                 open(tmp_extract_path, "wb") as f_out,
             ):
-                f_out.write(f_in.read())
+                shutil.copyfileobj(f_in, f_out)
 
             logger.info(f"Processing {target_filename} with polars")
-            # 3. Read with Polars
-            # CRITICAL: FDA text files contain unescaped quotes.
-            # quote_char=None is mandatory to prevent silent data loss and row misalignment.
-            df = pl.read_csv(tmp_extract_path, separator="\t", quote_char=None, encoding="utf8-lossy")
+            df = pl.read_csv(tmp_extract_path, separator="\t", quote_char=None, encoding="utf8-lossy", infer_schema_length=0)
 
             logger.info("Applying shift-left UUID generation")
-            # 4. Shift-Left UUID5 Generation
             df = df.with_columns(
                 pl.col(id_column)
                 .map_batches(
@@ -86,7 +83,6 @@ def stream_and_process_fda_zip(url: str, target_filename: str, id_column: str) -
                 .alias("coreason_id")
             )
 
-            # Yield dictionary rows to dlt
             yield df.to_dicts()
 
         except Exception:

@@ -2,6 +2,7 @@ version: 2
 
 sources:
   - name: fda_ndc_directory
+    schema: bronze
     description: "Raw data landed by dlt from the FDA NDC Directory zip file."
     tables:
       - name: coreason_etl_ndc_directory_bronze_ndc_product_raw
