@@ -59,11 +59,17 @@ def run_pipeline(_intent: PipelineExecutionIntent) -> PipelineExecutionReceipt:
 
     records_loaded = 0
     if pipeline.last_trace:
-        records_loaded = sum(
-            table_metrics.get("row_count", 0)
-            for package_metrics in pipeline.last_trace.last_extract_info.asdict().get("metrics", {}).values()
-            for table_metrics in package_metrics
-        )
+        records_loaded = 0
+    if pipeline.last_trace and pipeline.last_trace.last_normalize_info:
+        # row_counts is a native dictionary mapping table names to normalized row counts
+        records_loaded = sum(pipeline.last_trace.last_normalize_info.row_counts.values())
+
+    return PipelineExecutionReceipt(
+        status="success",
+        target_url=config.fda_ndc_target_url,
+        records_loaded=records_loaded,
+        dataset_name=pipeline.dataset_name,
+    )
 
     return PipelineExecutionReceipt(
         status="success",
