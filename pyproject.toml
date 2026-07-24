@@ -88,3 +88,6 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 omit = ["tests/*"]
+
+[tool.uv]
+override-dependencies = ["mashumaro[msgpack]>=3.17"]
