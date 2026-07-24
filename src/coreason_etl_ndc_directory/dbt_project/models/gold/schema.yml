@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: coreason_etl_ndc_directory_gold_ndc_billing_crosswalk
+    description: "A highly optimized view joining Package -> Product. Exposes ndc_11_digit (unhyphenated) as the primary indexing column to allow seamless joining against pharmacy claims datasets and pricing feeds."
+    columns:
+      - name: package_coreason_id
+        description: "Shift-left UUID for the package."
+      - name: product_coreason_id
+        description: "Shift-left UUID for the product."
+      - name: product_id
+        description: "Foreign Key to Silver.NDC_Product"
+      - name: ndc_package_code
+        description: "FDA 10-digit package code"
+      - name: package_description
+        description: "Commercial packaging details mapped to the product."
+      - name: product_ndc
+        description: "Base 10-digit product code"
+      - name: proprietary_name
+        description: "Trade name"
+      - name: non_proprietary_name
+        description: "Generic name / Active Ingredient"
+      - name: labeler_name
+        description: "Manufacturer/Distributor"
+      - name: dosage_form
+        description: "Dosage form"
+      - name: route
+        description: "Route"
+      - name: marketing_start_date
+        description: "Parsed to ISO 8601 (YYYYMMDD -> Date)"
+      - name: ndc_11_digit
+        description: "Unhyphenated 11-digit billing format (5-4-2)"
+
+  - name: coreason_etl_ndc_directory_gold_ndc_active_ingredients
+    description: "An unnested view utilizing PostgreSQL array functions to split the SUBSTANCENAME and ACTIVE_NUMERATOR_STRENGTH columns."
+    columns:
+      - name: product_coreason_id
+        description: "Shift-left UUID for the product."
+        tests:
+          - not_null
+      - name: product_id
+        description: "Source ID (e.g., 12345-678_01)"
+        tests:
+          - not_null
+      - name: substance_name
+        description: "The active ingredient/substance name."
+      - name: active_numerator_strength
+        description: "The strength of the active ingredient."

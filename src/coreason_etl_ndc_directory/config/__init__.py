@@ -8,14 +8,6 @@
 #
 # Source Code: https://github.com/CoReason-AI/coreason_etl_ndc_directory
 
-"""
-ETL pipeline for processing the FDA National Drug Code directory
-"""
+from .settings import SystemConfigurationState
 
-__version__ = "0.1.0"
-__author__ = "Akshaya M"
-__email__ = "akshaya.movvar@coreason.ai"
-
-from .main import PipelineExecutionIntent, PipelineExecutionReceipt, run_pipeline
-
-__all__ = ["PipelineExecutionIntent", "PipelineExecutionReceipt", "run_pipeline"]
+__all__ = ["SystemConfigurationState"]
